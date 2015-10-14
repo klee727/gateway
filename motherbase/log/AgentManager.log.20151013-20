@@ -1,0 +1,65 @@
+[DEBUG][2015-10-13 20:01:37.875 dispatcher.go:125: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:01:37.876 dispatcher.go:71: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:01:37.876 dispatcher.go:93: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:02:43.818 dispatcher.go:125: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:02:43.818 dispatcher.go:71: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:02:43.818 dispatcher.go:93: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:03:16.095 dispatcher.go:125: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:03:16.096 dispatcher.go:71: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:03:16.096 dispatcher.go:93: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:06:24.676 dispatcher.go:87: (*AgentManager).Controller][1] enter controller
+[DEBUG][2015-10-13 20:06:24.676 dispatcher.go:109: (*AgentManager).Detector][2] enter detector
+[DEBUG][2015-10-13 20:06:24.676 dispatcher.go:141: (*AgentManager).Scheduler][3] enter scheduler
+[DEBUG][2015-10-13 20:06:59.872 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:06:59.872 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:06:59.873 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:07:42.465 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:07:42.466 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:07:42.466 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:08:00.668 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:08:00.669 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:08:00.669 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:08:45.431 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:08:45.431 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:08:45.431 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:09:08.751 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:09:08.751 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:09:08.751 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:09:40.210 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:09:40.210 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:09:40.210 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:10:19.746 dispatcher.go:162: (*AgentManager).AddAgent][1] ready to send add agenttest
+[DEBUG][2015-10-13 20:10:19.747 dispatcher.go:141: (*AgentManager).Scheduler][2] enter scheduler
+[DEBUG][2015-10-13 20:10:19.748 dispatcher.go:87: (*AgentManager).Controller][3] enter controller
+[DEBUG][2015-10-13 20:10:19.749 dispatcher.go:109: (*AgentManager).Detector][4] enter detector
+[DEBUG][2015-10-13 20:10:51.041 dispatcher.go:162: (*AgentManager).AddAgent][1] ready to send add agenttest
+[DEBUG][2015-10-13 20:10:51.042 dispatcher.go:141: (*AgentManager).Scheduler][2] enter scheduler
+[DEBUG][2015-10-13 20:10:51.042 dispatcher.go:87: (*AgentManager).Controller][3] enter controller
+[DEBUG][2015-10-13 20:10:51.045 dispatcher.go:167: (*AgentManager).AddAgent][5] done
+[DEBUG][2015-10-13 20:10:51.042 dispatcher.go:109: (*AgentManager).Detector][4] enter detector
+[DEBUG][2015-10-13 20:10:51.046 dispatcher.go:157: (*AgentManager).Quit][6] Quit
+[DEBUG][2015-10-13 20:10:58.699 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:10:58.700 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:10:58.700 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:10:58.702 dispatcher.go:162: (*AgentManager).AddAgent][4] ready to send add agenttest
+[DEBUG][2015-10-13 20:10:58.702 dispatcher.go:167: (*AgentManager).AddAgent][5] done
+[DEBUG][2015-10-13 20:10:58.703 dispatcher.go:157: (*AgentManager).Quit][6] Quit
+[DEBUG][2015-10-13 20:11:16.729 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:11:16.730 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:11:16.730 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:11:16.731 dispatcher.go:162: (*AgentManager).AddAgent][4] ready to send add agenttest
+[DEBUG][2015-10-13 20:11:16.732 dispatcher.go:167: (*AgentManager).AddAgent][5] done
+[DEBUG][2015-10-13 20:11:16.733 dispatcher.go:157: (*AgentManager).Quit][6] Quit
+[DEBUG][2015-10-13 20:12:09.005 dispatcher.go:141: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:12:09.005 dispatcher.go:87: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:12:09.006 dispatcher.go:109: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:12:09.006 dispatcher.go:162: (*AgentManager).AddAgent][4] ready to send add agenttest
+[DEBUG][2015-10-13 20:12:09.006 dispatcher.go:167: (*AgentManager).AddAgent][5] done
+[DEBUG][2015-10-13 20:12:09.006 dispatcher.go:157: (*AgentManager).Quit][6] Quit
+[DEBUG][2015-10-13 20:14:06.376 dispatcher.go:143: (*AgentManager).Scheduler][1] enter scheduler
+[DEBUG][2015-10-13 20:14:06.377 dispatcher.go:89: (*AgentManager).Controller][2] enter controller
+[DEBUG][2015-10-13 20:14:06.378 dispatcher.go:111: (*AgentManager).Detector][3] enter detector
+[DEBUG][2015-10-13 20:14:06.379 dispatcher.go:164: (*AgentManager).AddAgent][4] ready to send add agenttest
+[DEBUG][2015-10-13 20:14:06.380 dispatcher.go:169: (*AgentManager).AddAgent][5] done
+[DEBUG][2015-10-13 20:14:06.381 dispatcher.go:77: (*AgentManager).NewAvailableAgent][6] new available agent test
+[DEBUG][2015-10-13 20:14:06.382 dispatcher.go:159: (*AgentManager).Quit][7] Quit
