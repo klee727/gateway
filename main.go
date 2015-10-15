@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/yangzhao28/phantom/commonlog"
-	"github.com/yangzhao28/phantom/motherbase"
+	"fmt"
+	"os"
+
+	"github.com/yangzhao28/gateway/gateway"
 )
 
-var logger = commonlog.NewLogger("main", "log", commonlog.DEBUG)
-
 func main() {
-	logger.Notice("service start")
-	motherbase.CreateServer()
+	config, err := gateway.LoadConfig("conf/gateway.json")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "can't read or parse config file: ", err.Error())
+	}
+	gateway.StartService(config)
 }

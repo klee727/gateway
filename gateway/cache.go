@@ -1,4 +1,4 @@
-package motherbase
+package gateway
 
 import (
 	"crypto/md5"
@@ -12,11 +12,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/yangzhao28/phantom/commonlog"
 )
-
-var cacheLogger = commonlog.NewLogger("cache", "log", commonlog.DEBUG)
 
 func Md5Sum(content []byte) string {
 	md5Ctx := md5.New()
@@ -101,18 +97,6 @@ func NewPersistCache(persistDirectory string) *PersistCache {
 	}
 }
 
-func (cache *PersistCache) Get(name string) (string, error) {
-	cache.mutex.RLock()
-	defer cache.mutex.RUnlock()
-	if item, ok := cache.items[name]; ok {
-		cacheLogger.Debug(name + " found")
-		return item.body, nil
-	} else {
-		cacheLogger.Debug(name + " not found")
-		return "", errors.New(name + " not exist")
-	}
-}
-
 func (cache *PersistCache) save(name string, body string) error {
 	item := &CacheItem{
 		id:         name,
@@ -126,12 +110,6 @@ func (cache *PersistCache) save(name string, body string) error {
 	}
 	cache.items[name] = item
 	return nil
-}
-
-func (cache *PersistCache) Save(name string, body string) error {
-	cache.mutex.Lock()
-	defer cache.mutex.Unlock()
-	return cache.save(name, body)
 }
 
 func (cache *PersistCache) remove(name string) error {
@@ -149,13 +127,29 @@ func (cache *PersistCache) remove(name string) error {
 	return nil
 }
 
+func (cache *PersistCache) Get(name string) (string, error) {
+	cache.mutex.RLock()
+	defer cache.mutex.RUnlock()
+	if item, ok := cache.items[name]; ok {
+		return item.body, nil
+	} else {
+		return "", errors.New(name + " not exist")
+	}
+}
+
+func (cache *PersistCache) Save(name string, body string) error {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+	return cache.save(name, body)
+}
+
 func (cache *PersistCache) Remove(name string) error {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 	return cache.remove(name)
 }
 
-func (cache *PersistCache) Replace(name string, body string) error {
+func (cache *PersistCache) Update(name string, body string) error {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 	if err := cache.remove(name); err != nil {
@@ -164,7 +158,7 @@ func (cache *PersistCache) Replace(name string, body string) error {
 	return cache.save(name, body)
 }
 
-func (cache *PersistCache) Clean() error {
+func (cache *PersistCache) CleanInvalidFiles() error {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 	fullPath, err := filepath.Abs(cache.persistDirectory)
@@ -217,7 +211,7 @@ type CacheItemInfo struct {
 	updateTimestamp int64
 }
 
-func (cache *PersistCache) List() ([]CacheItemInfo, error) {
+func (cache *PersistCache) List() []CacheItemInfo {
 	cache.mutex.RLock()
 	defer cache.mutex.RUnlock()
 	itemList := make([]CacheItemInfo, 0)
@@ -228,9 +222,8 @@ func (cache *PersistCache) List() ([]CacheItemInfo, error) {
 			updateTime:      fmt.Sprintf("%v", time.Unix(value.updateTime, 0)),
 			updateTimestamp: value.updateTime,
 		})
-		cacheLogger.Debug("  list -- " + value.id)
 	}
-	return itemList, nil
+	return itemList
 }
 
 func (cache *PersistCache) Reload() error {
@@ -238,15 +231,14 @@ func (cache *PersistCache) Reload() error {
 	defer cache.mutex.Unlock()
 	fullPath, err := filepath.Abs(cache.persistDirectory)
 	if err != nil {
-		cacheLogger.Warning(err.Error())
 		return err
 	}
-	cacheLogger.Notice(fmt.Sprintf("reload from %s", fullPath))
 	files, err := ioutil.ReadDir(fullPath)
 	if err != nil {
-		cacheLogger.Warning(err.Error())
 		return err
 	}
+	// clean exist map
+	cache.items = make(map[string]*CacheItem)
 	count := 0
 	for _, fileInfo := range files {
 		if !fileInfo.IsDir() {
@@ -255,12 +247,9 @@ func (cache *PersistCache) Reload() error {
 			if err == nil {
 				cache.items[item.id] = item
 				count++
-				cacheLogger.Debug(fmt.Sprintf("loaded -> file:%v", fullFileName))
 			} else {
-				cacheLogger.Debug(fmt.Sprintf("ignore -> file:%v error:%v", fullFileName, err.Error()))
 			}
 		}
 	}
-	cacheLogger.Notice(fmt.Sprintf("%v item(s) loaded, totally %v now", count, len(cache.items)))
 	return nil
 }

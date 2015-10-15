@@ -1,4 +1,4 @@
-package motherbase
+package gateway
 
 import (
 	"encoding/json"

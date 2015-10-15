@@ -1,0 +1,16 @@
+{
+    "LogDir": "log",
+    "SaveDir": "save",
+    "DetectRoundTimeBySecond": 10,
+    "DifferRoundTimeBySecond": 30,
+    "HttpService": {
+        "Host": "localhost",
+        "Port": 12345 
+    },
+    "AgentInstances": [
+        {
+            "Host": "localhost",
+            "Port": 8611
+        }
+    ]
+}

@@ -1,18 +1,14 @@
-package motherbase
+package gateway
 
 import "fmt"
 
 type AgentGateway struct {
-	Cache   *PersistCache
 	Manager *AgentManager
 }
 
-func NewAgentGateway() *AgentGateway {
-	cache := NewPersistCache("save")
-	manager := NewAgentManager(cache)
-
+func NewAgentGateway(config *Configure) *AgentGateway {
+	manager := NewAgentManager(config)
 	return &AgentGateway{
-		Cache:   cache,
 		Manager: manager,
 	}
 }
@@ -26,11 +22,13 @@ func (gateway *AgentGateway) NewAgent(host string, port int) error {
 }
 
 func (gateway *AgentGateway) NewConfig(id string, config string) error {
-	if err := gateway.Cache.Replace(id, config); err != nil {
+	if err := gateway.Manager.ConfigureCache.Update(id, config); err != nil {
 		return err
 	}
 	return nil
 }
+
+// http server
 
 func (gateway *AgentGateway) Quit() {
 	gateway.Manager.Quit()

@@ -1,23 +1,21 @@
-package motherbase
+package gateway
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/yangzhao28/phantom/commonlog"
+	"github.com/op/go-logging"
+	"github.com/yangzhao28/gateway/commonlog"
 )
 
 // 收取请求(http)        √
 // cache, 本地存储       √
-// Agent管理             X
+// Agent管理             √
 // 对Agent 3 routine:
-//   - 配置              X
-//   - 探活              X
-//   - diff              X
-
-var managerLogger = commonlog.NewLogger("AgentManager", "log", commonlog.DEBUG)
+//   - 配置              √
+//   - 探活              √
+//   - diff              √
 
 type AgentManager struct {
 	enableAgents map[string]Configurable
@@ -36,7 +34,8 @@ type AgentManager struct {
 	detectorRoundSecond time.Duration
 	differRoundSecond   time.Duration
 
-	cache *PersistCache
+	ConfigureCache        *PersistCache
+	loggerForAgentManager *logging.Logger
 
 	syncer sync.WaitGroup
 	quit   chan bool
@@ -47,7 +46,7 @@ type AgentEvent struct {
 	configurable *Configurable
 }
 
-func NewAgentManager(cache *PersistCache) *AgentManager {
+func NewAgentManager(config *Configure) *AgentManager {
 	manager := &AgentManager{
 		enableAgents:    make(map[string]Configurable),
 		availableAgents: make(map[string]Configurable),
@@ -60,32 +59,33 @@ func NewAgentManager(cache *PersistCache) *AgentManager {
 		agentRunDetector: make(chan int),
 		agentRunDiffer:   make(chan int),
 
-		detectorRoundSecond: 10 * time.Second,
-		differRoundSecond:   15 * time.Second,
+		detectorRoundSecond: time.Duration(config.DetectRoundTimeBySecond) * time.Second,
+		differRoundSecond:   time.Duration(config.DifferRoundTimeBySecond) * time.Second,
 
-		cache: cache,
+		ConfigureCache:        NewPersistCache(config.SaveDir),
+		loggerForAgentManager: commonlog.NewLogger("agentmanager", config.LogDir, commonlog.DEBUG),
 
 		quit: make(chan bool),
 	}
 	return manager
 }
 
-func (manager *AgentManager) EnableAgent(name string, instance *Configurable) {
+func (manager *AgentManager) enableAgent(name string, instance *Configurable) {
 	manager.enableMutex.Lock()
 	defer manager.enableMutex.Unlock()
 
 	if _, ok := manager.enableAgents[name]; !ok {
 		manager.enableAgents[name] = *instance
-		managerLogger.Debug("new enable agent " + name)
+		manager.loggerForAgentManager.Debug("new enable agent " + name)
 	}
 }
 
-func (manager *AgentManager) DisableAgent(name string) {
+func (manager *AgentManager) disableAgent(name string) {
 	manager.enableMutex.Lock()
 	defer manager.enableMutex.Unlock()
 	if _, ok := manager.enableAgents[name]; ok {
 		delete(manager.enableAgents, name)
-		managerLogger.Debug("disable agent " + name)
+		manager.loggerForAgentManager.Debug("disable agent %v", name)
 	}
 }
 
@@ -94,7 +94,7 @@ func (manager *AgentManager) NewAvailableAgent(name string, instance *Configurab
 	defer manager.availableMutex.Unlock()
 	if _, ok := manager.availableAgents[name]; !ok {
 		manager.availableAgents[name] = *instance
-		managerLogger.Debug("new available agent " + name)
+		manager.loggerForAgentManager.Debug("new available agent %v", name)
 	}
 }
 
@@ -103,26 +103,27 @@ func (manager *AgentManager) RemoveAvailableAgent(name string) {
 	defer manager.availableMutex.Unlock()
 	if _, ok := manager.availableAgents[name]; ok {
 		delete(manager.availableAgents, name)
-		managerLogger.Debug("delete agent " + name)
+		manager.loggerForAgentManager.Debug("delete agent %v", name)
 	}
 }
 
 func (manager *AgentManager) Controller() {
-	managerLogger.Debug("enter controller")
-	defer managerLogger.Debug("leave controller")
+	manager.loggerForAgentManager.Info("controller service start.")
+	defer manager.loggerForAgentManager.Info("controller service shutdown.")
 
 	defer manager.syncer.Done()
 	for {
 		select {
 		case event := <-manager.agentEnableChannel:
-			manager.EnableAgent(event.name, event.configurable)
+			manager.enableAgent(event.name, event.configurable)
 		case event := <-manager.agentDisablechannel:
-			manager.DisableAgent(event.name)
+			manager.disableAgent(event.name)
 		case event := <-manager.agentCreateChannel:
 			manager.NewAvailableAgent(event.name, event.configurable)
 		case event := <-manager.agentRemoveChannel:
+			// TODO 没有这么简单， 需要首先关掉所有 Configure，再去除Agent
 			manager.RemoveAvailableAgent(event.name)
-			manager.DisableAgent(event.name)
+			manager.disableAgent(event.name)
 		case <-manager.quit:
 			break
 		}
@@ -130,8 +131,8 @@ func (manager *AgentManager) Controller() {
 }
 
 func (manager *AgentManager) Detector() {
-	managerLogger.Debug("enter detector")
-	defer managerLogger.Debug("leave detector")
+	manager.loggerForAgentManager.Info("detector service start.")
+	defer manager.loggerForAgentManager.Info("detector service shutdown.")
 
 	defer manager.syncer.Done()
 	for {
@@ -145,10 +146,7 @@ func (manager *AgentManager) Detector() {
 					waitForDone.Add(1)
 					go func(name string, bridge Configurable) {
 						defer waitForDone.Done()
-						managerLogger.Debug("ping")
-						err := bridge.Ping()
-						managerLogger.Debug("ping response")
-						if err != nil {
+						if bridge.Ping() != nil {
 							manager.agentDisablechannel <- &AgentEvent{name, &agent}
 						} else {
 							manager.agentEnableChannel <- &AgentEvent{name, &agent}
@@ -164,8 +162,8 @@ func (manager *AgentManager) Detector() {
 }
 
 func (manager *AgentManager) Scheduler() {
-	managerLogger.Debug("enter scheduler")
-	defer managerLogger.Debug("leave scheduler")
+	manager.loggerForAgentManager.Info("scheduler service start.")
+	defer manager.loggerForAgentManager.Info("scheduler service shutdown.")
 	defer manager.syncer.Done()
 
 	detectorTimer := time.NewTimer(manager.detectorRoundSecond)
@@ -185,24 +183,22 @@ func (manager *AgentManager) Scheduler() {
 }
 
 func (manager *AgentManager) Differ() {
-	managerLogger.Debug("enter differ")
-	defer managerLogger.Debug("leave differ")
+	manager.loggerForAgentManager.Info("differ serivce start.")
+	defer manager.loggerForAgentManager.Info("differ service shutdown.")
 
 	defer manager.syncer.Done()
 	for {
 		select {
 		case <-manager.agentRunDiffer:
 			if len(manager.enableAgents) == 0 {
-				managerLogger.Debug("no activated agents")
+				manager.loggerForAgentManager.Debug("no activated agents")
 				continue
 			}
 			func() {
-				managerLogger.Debug("run differ")
 				// get current agent list, eg: activated
-				activatedAgents, err := manager.cache.List()
-				if err != nil {
-					return
-				}
+				activatedAgents := manager.ConfigureCache.List()
+				manager.loggerForAgentManager.Info("expect %v agents", len(activatedAgents))
+				// use to filter found agents
 				activatedAgentsId := make(map[string]bool)
 				for _, value := range activatedAgents {
 					activatedAgentsId[value.id] = true
@@ -213,18 +209,17 @@ func (manager *AgentManager) Differ() {
 					defer manager.availableMutex.RUnlock()
 					for name, agent := range manager.enableAgents {
 						waitForDone.Add(1)
-						managerLogger.Debug("diff -> " + name)
+						manager.loggerForAgentManager.Debug("diff -> " + name)
 						go func(name string, bridge Configurable) {
 							defer waitForDone.Done()
 							// map[string]string
 							foundAgents, err := bridge.ListConfig()
-							managerLogger.Debug(fmt.Sprintf("%v", foundAgents))
 							if err != nil {
 								// do something
-								managerLogger.Debug(fmt.Sprintf("fail to list config on %v: %v", name, err.Error()))
+								manager.loggerForAgentManager.Warning("fail to list config on %v: %v", name, err.Error())
 								return
 							}
-							managerLogger.Debug(fmt.Sprintf("found %v agents on %v", len(foundAgents), name))
+							manager.loggerForAgentManager.Info("found %v agents on %v", len(foundAgents), name)
 							// check unexpected agents
 							for id, _ := range foundAgents {
 								if _, ok := activatedAgentsId[id]; !ok {
@@ -233,22 +228,20 @@ func (manager *AgentManager) Differ() {
 							}
 							// check agent not updated
 							for _, info := range activatedAgents {
-								managerLogger.Debug(fmt.Sprintf("expect id %v on %v", info.id, name))
 								if md5sum, ok := foundAgents[info.id]; ok && strings.ToLower(md5sum) == strings.ToLower(info.md5sum) {
-									managerLogger.Debug("matched")
 									continue
 								}
-								managerLogger.Debug(fmt.Sprintf("but missed, %v vs %v", foundAgents[info.id], info.md5sum))
-								go func(id string) {
-									managerLogger.Debug("try boot agent config: " + id)
-									if manager.cache != nil {
-										config, err := manager.cache.Get(id)
+								manager.loggerForAgentManager.Warning("expect id %v on %v but missed", info.id, name)
+								go func(configId string) {
+									manager.loggerForAgentManager.Debug("try reconfigure agent: %v", configId)
+									if manager.ConfigureCache != nil {
+										jsonConfig, err := manager.ConfigureCache.Get(configId)
 										if err != nil {
-											managerLogger.Debug("no config for: " + id)
+											manager.loggerForAgentManager.Warning("no config for: %v", configId)
 											return
 										}
-										managerLogger.Debug("do config")
-										bridge.DoConfig(id, config)
+										manager.loggerForAgentManager.Debug("do config on %v", name)
+										bridge.DoConfig(configId, jsonConfig)
 									}
 								}(info.id)
 							}
@@ -264,27 +257,38 @@ func (manager *AgentManager) Differ() {
 }
 
 func (manager *AgentManager) Quit() {
-	managerLogger.Debug("Quit")
+	manager.loggerForAgentManager.Debug("Quit")
 	close(manager.quit)
 }
 
 func (manager *AgentManager) AddAgent(name string, instance *Configurable) {
-	managerLogger.Debug("ready to send add agent" + name)
+	manager.loggerForAgentManager.Debug("add agent %v", name)
 	manager.agentCreateChannel <- &AgentEvent{
 		name:         name,
 		configurable: instance,
 	}
-	managerLogger.Debug("done")
 }
 
 func (manager *AgentManager) RemoveAgent(name string, instance *Configurable) {
+	manager.loggerForAgentManager.Debug("remove agent %v", name)
 	manager.agentRemoveChannel <- &AgentEvent{
 		name:         name,
 		configurable: instance,
 	}
 }
 
-func (manager *AgentManager) Go() {
+func (manager *AgentManager) Go() error {
+	if err := manager.ConfigureCache.CleanInvalidFiles(); err != nil {
+		return err
+	}
+	if err := manager.ConfigureCache.Reload(); err != nil {
+		return err
+	}
+
+	for _, value := range manager.ConfigureCache.List() {
+		manager.loggerForAgentManager.Debug("found config item id:%v md5:%v time:%v", value.id, value.md5sum, value.updateTime)
+	}
+
 	manager.syncer.Add(1)
 	go manager.Controller()
 	manager.syncer.Add(1)
@@ -294,5 +298,7 @@ func (manager *AgentManager) Go() {
 	manager.syncer.Add(1)
 	go manager.Differ()
 
+	manager.loggerForAgentManager.Info("agent manager service started")
 	manager.syncer.Wait()
+	return nil
 }
